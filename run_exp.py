@@ -24,6 +24,7 @@ print = functools.partial(print, flush=True)
 # Global Variables
 TEST_SIZE = 0.5  # fraction of observations from each protected group
 Theta = np.linspace(0, 1.0, 41)
+alpha = (Theta[1] - Theta[0])/2
 DATA_SPLIT_SEED = 4
 _SMALL = True  # small scale dataset for speed and testing
 
@@ -260,30 +261,92 @@ def log_loss_benchmark(dataset='adult', size=100):
     return bl
 
 
-print('Starting...')
 
-alpha = (Theta[1] - Theta[0])/2
-eps_list = [0.08, 0.1, 0.15, 0.2, 0.25] # set of specified disparity values
-eps_list = [0.25] # set of specified disparity values
 
-n = 100  #size of the sub-sampled dataset, when SMALL is True
+def read_result_list(result_list):
+    """
+    Parse the experiment a list of experiment result and print out info
+    """
+
+    for result in result_list:
+        learner = result['learner']
+        dataset = result['dataset']
+        train_eval = result['train_eval']
+        test_eval = result['test_eval']
+        loss = result['loss']
+        constraint = result['constraint']
+        learner = result['learner']
+        dataset = result['dataset']
+        eps_vals = train_eval.keys()
+        train_disp_dic = {}
+        test_disp_dic = {}
+        train_err_dic = {}
+        test_err_dic = {}
+        test_loss_std_dic = {}
+        test_disp_dev_dic = {}
+        for eps in eps_vals:
+            train_disp = train_eval[eps]["DP_disp"]
+            test_disp = test_eval[eps]["DP_disp"]
+            train_disp_dic[eps] = train_disp
+            test_disp_dic[eps] = test_disp
+            test_loss_std_dic[eps] = test_eval[eps]['loss_std']
+            test_disp_dev_dic[eps] = test_eval[eps]['disp_std']
+
+            if loss == "square":
+                # taking the RMSE
+                train_err_dic[eps] = np.sqrt(train_eval[eps]['weighted_loss'])
+                test_err_dic[eps] = np.sqrt(test_eval[eps]['weighted_loss'])
+
+            else:
+                train_err_dic[eps] = (train_eval[eps]['weighted_loss'])
+                test_err_dic[eps] = (test_eval[eps]['weighted_loss'])
+
+        # taking the pareto frontier
+        train_disp_list = [train_disp_dic[k] for k in eps_vals]
+        test_disp_list = [test_disp_dic[k] for k in eps_vals]
+        train_err_list = [train_err_dic[k] for k in eps_vals]
+        test_err_list = [test_err_dic[k] for k in eps_vals]
+
+        if loss == "square":
+            show_loss = 'RMSE'
+        else:
+            show_loss = loss
+
+
+        info = str('Dataset: '+dataset + '; loss: ' + loss + '; Solver: '+ learner)
+        print(info)
+
+        train_data = {'specified epsilon': list(eps_vals), 'SP disparity':
+                      train_disp_list, show_loss : train_err_list}
+        train_performance = pd.DataFrame(data=train_data)
+        test_data = {'specified epsilon': list(eps_vals), 'SP disparity':
+                      test_disp_list, show_loss : test_err_list}
+        test_performance = pd.DataFrame(data=test_data)
+
+        # Print out experiment info.
+        print('Train set trade-off:')
+        print(train_performance)
+        print('Test set trade-off:')
+        print(test_performance)
+
+
+
+# Sample instantiation of running the fair regeression algorithm
+eps_list = [0.08, 0.1, 0.15, 0.2, 0.25] # range of specified disparity values
+n = 1000  # size of the sub-sampled dataset, when the flag SMALL is True
 dataset = 'law_school'  # name of the data set
-constraint = "DP"  # name of the constraint; so far limited to DP
+constraint = "DP"  # name of the constraint; so far limited to demographic parity (or statistical parity)
 loss = "square"  # name of the loss function
+learner = solvers.LeastSquaresLearner(Theta) # Specify a supervised learning oracle oracle 
 
-info = str(dataset +'_short_'+
-           'eps_list_'+str(eps_list)) + 'OLS' + '_NCalls'
-
-# Sample use of running the code
-
-# First specify a supervised learning oracle oracle 
-learner2 = solvers.LeastSquaresLearner(Theta)
+info = str('Dataset: '+dataset + '; loss: ' + loss + '; eps list: '+str(eps_list)) + '; Solver: '+learner.name
+print('Starting experiment. ' + info)
 # Run the fair learning algorithm the supervised learning oracle
-result2 = fair_train_test(dataset, n, eps_list, learner2,
+result = fair_train_test(dataset, n, eps_list, learner,
                           constraint=constraint, loss=loss,
                           random_seed=DATA_SPLIT_SEED)
 
-print('End.')
+read_result_list([result])  # A simple print out for the experiment result
 
 # Other sample use:
 """

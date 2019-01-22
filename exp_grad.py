@@ -70,7 +70,7 @@ def train_FairRegression(x, a, y, eps, Theta, learner,
         raise Exception('Constraint not supported: ', str(constraint))
 
 
-    print('epsilon value: ', eps, 'number of oracle calls', result.n_oracle_calls)
+    print('epsilon value: ', eps, ': number of oracle calls', result.n_oracle_calls)
 
     model_info = {}  # dictionary for saving data
     model_info['loss_function'] = loss
