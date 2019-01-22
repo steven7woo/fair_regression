@@ -1,7 +1,7 @@
 # fair_regression
 Implementation for a reduction-based algorithm for fair regression.
 
-Use run_exp.py to reproduce results in the paper.
+Main usage: run script run_exp.py to reproduce results in the paper.
 
 To run the code the following packages need to be installed:
 - Gurobi solver. Avaiable at: http://www.gurobi.com/index
