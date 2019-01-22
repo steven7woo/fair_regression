@@ -1,6 +1,8 @@
 """
-This file contains functions for performing running
-experimental results
+This file contains functions for performing running fair regression
+algorithms and the set of baseline methods.
+
+See end of file to see sample use of running fair regression.
 """
 
 from __future__ import print_function
@@ -233,8 +235,7 @@ def square_loss_benchmark(dataset, n):
     return bl
 
 
-
-def log_loss_benchmark(dataset='adult', size = 0):
+def log_loss_benchmark(dataset='adult', size=100):
     """
     Run the set of unconstrained methods for logistic loss
     LogisticRegression
@@ -245,7 +246,6 @@ def log_loss_benchmark(dataset='adult', size = 0):
     base_res1 = base_train_test(dataset, size, base_solver1, loss=loss,
                                 random_seed=DATA_SPLIT_SEED)
     print("Done with Logistic base")
-
 
     if _SMALL:
         bl = [base_res1]
@@ -259,71 +259,62 @@ def log_loss_benchmark(dataset='adult', size = 0):
         bl = [base_res1, base_res3]
     return bl
 
+
 print('Starting...')
 
 alpha = (Theta[1] - Theta[0])/2
-eps_list = [0.01, 0.025, 0.04, 0.06, 0.08, 0.1, 0.15, 0.2, 0.25,
-             0.4, 1]
+eps_list = [0.08, 0.1, 0.15, 0.2, 0.25] # set of specified disparity values
+eps_list = [0.25] # set of specified disparity values
 
-n = 2000
-dataset = 'law_school'
-constraint = "DP"
-loss = "square"
+n = 100  #size of the sub-sampled dataset, when SMALL is True
+dataset = 'law_school'  # name of the data set
+constraint = "DP"  # name of the constraint; so far limited to DP
+loss = "square"  # name of the loss function
 
 info = str(dataset +'_short_'+
            'eps_list_'+str(eps_list)) + 'OLS' + '_NCalls'
 
-# bl = log_loss_benchmark('adult', size=2000)
-# sq_bl = square_loss_benchmark('law_school', 2000)
-# pickle.dump(bl, open('adult_short_bl.pkl', 'wb'))
-# pickle.dump(sq_bl, open('law_school_short_bl.pkl', 'wb'))
+# Sample use of running the code
 
+# First specify a supervised learning oracle oracle 
+learner2 = solvers.LeastSquaresLearner(Theta)
+# Run the fair learning algorithm the supervised learning oracle
+result2 = fair_train_test(dataset, n, eps_list, learner2,
+                          constraint=constraint, loss=loss,
+                          random_seed=DATA_SPLIT_SEED)
 
+print('End.')
+
+# Other sample use:
 """
 learner1 = solvers.SVM_LP_Learner(off_set=alpha)
 result1 = fair_train_test(dataset, n, eps_list, learner1,
                           constraint=constraint, loss=loss,
                           random_seed=DATA_SPLIT_SEED)
-print('DONE WITH SVM')
 
 learner2 = solvers.LeastSquaresLearner(Theta)
 result2 = fair_train_test(dataset, n, eps_list, learner2,
                           constraint=constraint, loss=loss,
                           random_seed=DATA_SPLIT_SEED)
-print('DONE WITH OLS')
 
-# learner3 = solvers.RF_Regression_Learner(Theta)
-# result3 = fair_train_test(dataset, n, eps_list, learner3,
-#                           constraint=constraint, loss=loss,
-#                           random_seed=DATA_SPLIT_SEED)
-# print('DONE WITH RF')
+learner3 = solvers.RF_Regression_Learner(Theta)
+result3 = fair_train_test(dataset, n, eps_list, learner3,
+                           constraint=constraint, loss=loss,
+                           random_seed=DATA_SPLIT_SEED)
 
-# learner4 = solvers.XGB_Classifier_Learner(Theta)
-# result4 = fair_train_test(dataset, n, eps_list, learner4,
-#                           constraint=constraint, loss=loss,
-#                           random_seed=DATA_SPLIT_SEED)
-# print('DONE WITH XGB Classifier')
+learner4 = solvers.XGB_Classifier_Learner(Theta)
+result4 = fair_train_test(dataset, n, eps_list, learner4,
+                           constraint=constraint, loss=loss,
+                           random_seed=DATA_SPLIT_SEED)
 
-# learner5 = solvers.LogisticRegressionLearner(Theta)
-# result5 = fair_train_test(dataset, n, eps_list, learner5,
-#                           constraint=constraint, loss=loss,
-#                           random_seed=DATA_SPLIT_SEED)
-# print('DONE WITH LOGISTIC')
+learner5 = solvers.LogisticRegressionLearner(Theta)
+result5 = fair_train_test(dataset, n, eps_list, learner5,
+                          constraint=constraint, loss=loss,
+                           random_seed=DATA_SPLIT_SEED)
 
 learner6 = solvers.XGB_Regression_Learner(Theta)
 result6 = fair_train_test(dataset, n, eps_list, learner6,
                           constraint=constraint, loss=loss,
                           random_seed=DATA_SPLIT_SEED)
-print('DONE WITH XGB Regression')
-
-
-rl = [result2, result6, result7]
 """
-
-# Saving the result list
-# outfile = open(info+'.pkl','wb')
-# pickle.dump(result2, outfile)
-# outfile.close()
-
-
 

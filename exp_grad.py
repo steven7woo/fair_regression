@@ -76,17 +76,4 @@ def train_FairRegression(x, a, y, eps, Theta, learner,
     model_info['loss_function'] = loss
     model_info['constraint'] = constraint
     model_info['exp_grad_result'] = result
-
-    # evaluation = evaluate.evaluate_FairModel(x, a, y, loss, result, Theta)
-    # model_info['train_eval'] = evaluation  # eval on training set
     return model_info
-
-"""
-# Example:
-x, a, y = parser.clean_lawschool_race(200)
-# x, a, y = parser.clean_adult_gender(100)
-Theta = np.linspace(0, 1.0, 21)
-learner = solvers.LeastSquaresLearner(Theta)
-# learner1 = solvers.SVM_LP_Learner()
-model_info = train_FairRegression(x, a, y, 0.1, Theta, learner, constraint="QEO", loss="logistic")
-"""

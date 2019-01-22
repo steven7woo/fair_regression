@@ -44,13 +44,13 @@ _LOGISTIC_C = 5  # Constant for rescaled logisitic loss; might have to
 from sklearn.model_selection import train_test_split
 
 """
-FIRST CLASS OF EXP_GRAD SOLVERS
+Oracles for fair regression algorithm
 """
-
 class SVM_LP_Learner:
     """
-    Use Gurobi to minimize hinge loss
+    Gurobi based cost-sensitive classification oracle
     Assume there is a 'theta' and 'quantile' field in the X data frame
+    Oracle=CS; Class=linear
     """
     def __init__(self, off_set=0, norm_bdd=1):
         self.weights = None
@@ -72,8 +72,8 @@ class SVM_LP_Learner:
 
 class LeastSquaresLearner:
     """
-    Basic Least regression square CSC oracle
-    First approximate the data; then solves the least square
+    Basic Least regression square based oracle
+    Oracle=LS; class=linear
     """
     def __init__(self, Theta):
         self.weights = None
@@ -93,9 +93,8 @@ class LeastSquaresLearner:
 
 class LogisticRegressionLearner:
     """
-    Basic Logistic regression CSC oracle
-    First approximate the data using pairs of labeled data;
-    Then solves the resulting weighted logisitic regression problem.
+    Basic Logistic regression baed oracle
+    Oralce=LR; Class=linear
     """
     def __init__(self, Theta, C=10000):
         self.regr = LogisticRegression(random_state=0, C=C,
@@ -122,8 +121,7 @@ class LogisticRegressionLearner:
 class RF_Classifier_Learner:
     """
     Basic RF classifier based CSC
-    First approximate the data using pairs of labeled data;
-    Then solves the resulting weighted logisitic regression problem.
+    Oracle=LR; Class=Tree ensemble
     """
     def __init__(self, Theta):
         self.Theta = Theta
@@ -144,38 +142,10 @@ class RF_Classifier_Learner:
         pred = 1*(y_values - X['theta'] >= 0)
         return pred
 
-
-class GB_Classifier_Learner:
-    """
-    Basic GB classifier based CSC
-    First approximate the data using pairs of labeled data;
-    Then solves the resulting weighted logisitic regression problem
-    """
-    def __init__(self, Theta):
-        self.Theta = Theta
-        self.name = "GB Classifier"
-        params = {'n_estimators': 20, 'max_depth': 3,
-                  'min_samples_split': 2, 'learning_rate': 0.01,
-                  'loss': 'deviance'}
-        self.clf = GradientBoostingClassifier(**params)
-
-    def fit(self, X, Y, W):
-        matX, vecY, vecW = approx_data_logistic(X, Y, W, self.Theta)
-        self.clf.fit(matX, vecY, sample_weight=vecW)
-
-    def predict(self, X):
-        pred_prob = self.clf.predict_proba(X.drop(['theta',
-                                                   'quantile'],
-                                                  axis=1))
-        y_values = pd.DataFrame(pred_prob)[1]
-        pred = 1*(y_values - X['theta'] >= 0)
-        return pred
-
 class XGB_Classifier_Learner:
     """
-    Basic GB classifier based CSC
-    First approximate the data using pairs of labeled data;
-    Then solves the resulting weighted logisitic regression problem
+    Basic GB classifier based oracle
+    Oracle=LR; Class=Tree ensemble
     """
     def __init__(self, Theta):
         self.Theta = Theta
@@ -199,7 +169,8 @@ class XGB_Classifier_Learner:
 
 class RF_Regression_Learner:
     """
-    Basic random forest based CSC
+    Basic random forest based oracle
+    Oracle=LS; Class=Tree ensemble
     """
     def __init__(self, Theta):
         self.Theta = Theta
@@ -217,30 +188,10 @@ class RF_Regression_Learner:
         return pred
 
 
-class GB_Regression_Learner:
-    """
-    Gradient boosting based CSC
-    """
-    def __init__(self, Theta):
-        self.Theta = Theta
-        self.name = "GB Regression"
-        params = {'n_estimators': 20, 'max_depth': 3,
-                  'min_samples_split': 2, 'learning_rate': 0.01, 'loss': 'ls'}
-        self.regr = GradientBoostingRegressor(**params)
-
-    def fit(self, X, Y, W):
-        matX, vecY = approximate_data(X, Y, W, self.Theta)
-        self.regr.fit(matX, vecY)
-
-    def predict(self, X):
-        y_values = self.regr.predict(X.drop(['theta', 'quantile'], axis=1))
-        pred = 1*(y_values - X['theta'] >= 0)  # w * x - theta
-        return pred
-
-
 class XGB_Regression_Learner:
     """
-    Gradient boosting based CSC
+    Gradient boosting based oracle
+    Oracle=LS; Class=Tree Ensemble
     """
     def __init__(self, Theta):
         self.Theta = Theta
@@ -259,31 +210,7 @@ class XGB_Regression_Learner:
         pred = 1*(y_values - X['theta'] >= 0)  # w * x - theta
         return pred
 
-
-class ToyLearner:
-    """
-    Basic Least regression square regression oracle;
-    First build a linear model to predict the cost;
-    then make prediction accordingly.
-    """
-    def __init__(self):
-        self.weights = None
-        self.name = "Toy"
-
-    def fit(self, X, Y, W):
-        sqrtW = np.sqrt(W)
-        matX = np.array(X) * sqrtW[:, np.newaxis]
-        vecY = Y * sqrtW
-        self.lsqinfo = np.linalg.lstsq(matX, vecY, rcond=None)
-        self.weights = pd.Series(self.lsqinfo[0], index=list(X))
-
-    def predict(self, X):
-        pred = X.dot(self.weights)
-        return 1*(pred>0.5)
-
-
-
-# HELPER FUNCTIONS HERE FOR CSC
+# HELPER FUNCTIONS HERE FOR BestH Oracles
 
 def SVM_Gurobi(X, Y, W, norm_bdd, off_set):
     """
@@ -459,6 +386,7 @@ class Logistic_Base_Learner:
 class RF_Base_Regressor: 
     """
     Standard Random Forest Regressor
+    This is for baseline evaluation; not for fair learn oracle
     """
     def __init__(self, max_depth=3, n_estimators=20):
         # initialize a rf learner
@@ -478,6 +406,7 @@ class RF_Base_Regressor:
 class RF_Base_Classifier: 
     """
     Standard Random Forest Classifier
+    This is for baseline evaluation; not for fair learn oracle
     """
     def __init__(self, max_depth=3, n_estimators=20):
         # initialize a rf learner
@@ -494,46 +423,10 @@ class RF_Base_Classifier:
         pred = self.regr.predict_proba(x)
         return pred
 
-
-class GB_Base_Regressor:
-    """
-    Standard gradient boosting regressor
-    """
-    def __init__(self):
-        params = {'n_estimators': 20, 'max_depth': 3,
-                  'min_samples_split': 2, 'learning_rate': 0.01, 'loss': 'ls'}
-        self.regr = GradientBoostingRegressor(**params)
-        self.name = "GB Regressor"
-
-    def fit(self, x, y):
-        self.regr.fit(x, y)
-
-    def predict(self, x):
-        pred = self.regr.predict(x)
-        return pred
-
-
-class GB_Base_Classifier:
-    """
-    Standard gradient boosting classifier
-    """
-    def __init__(self):
-        params = {'n_estimators': 20, 'max_depth': 3,
-                  'min_samples_split': 2, 'learning_rate': 0.01}
-        self.regr = GradientBoostingClassifier(**params)
-        self.name = "GB Classifier"
-
-    def fit(self, x, y):
-        self.regr.fit(x, y)
-
-    def predict(self, x):
-        pred = self.regr.predict_proba(x)
-        return pred
-
-
 class XGB_Base_Classifier:
     """
     Extreme gradient boosting classifier
+    This is for baseline evaluation; not for fair learn oracle
     """
     def __init__(self, max_depth=3, n_estimators=150,
                  gamma=2):
@@ -555,6 +448,7 @@ class XGB_Base_Classifier:
 class XGB_Base_Regressor:
     """
     Extreme gradient boosting regressor
+    This is for baseline evaluation; not for fair learn oracle
     """
     def __init__(self, max_depth=4, n_estimators=200):
         param = {'max_depth': max_depth, 'silent': 1, 'objective':
@@ -573,6 +467,7 @@ class XGB_Base_Regressor:
 def runtime_test():
     """
     Testing the runtime for different oracles
+    Taking 1000 examples from the law school dataset.
     """
     x, a, y = parser.clean_lawschool_full()
     x, a, y = parser.subsample(x, a, y, 1000)
@@ -609,133 +504,3 @@ def runtime_test():
     learner5.fit(X, Y, W)
     end = time.time()
     print("XGB logistic", end - start)
-
-"""
-x, a, y = parser.clean_communities_full()
-X_train, X_test, y_train, y_test = train_test_split(x, y,
-                                                    test_size=0.5,
-                                                    random_state=4)
-lner = OLS_Base_Learner()
-lner.fit(X_train, y_train)
-pred = lner.predict(X_test)
-pred_train = lner.predict(X_train)
-print('OLS train', np.sqrt(mean_squared_error(y_train, pred_train)))
-print('OLS test', np.sqrt(mean_squared_error(y_test, pred)))
-
-lner1 = XGB_Base_Regressor(max_depth=4, n_estimators=200)
-lner1.fit(X_train, y_train)
-pred1 = lner1.predict(X_test)
-pred_train1 = lner1.predict(X_train)
-print('XGB train', np.sqrt(mean_squared_error(y_train, pred_train1)))
-print('XGB test', np.sqrt(mean_squared_error(y_test, pred1)))
-
-lner2 = RF_Base_Regressor(max_depth=4, n_estimators=200)
-lner2.fit(X_train, y_train)
-pred2 = lner2.predict(X_test)
-pred_train2 = lner2.predict(X_train)
-print('RF train', np.sqrt(mean_squared_error(y_train, pred_train2)))
-print('RF test', np.sqrt(mean_squared_error(y_test, pred2)))
-
-
-x, a, y = parser.clean_adult_full() 
-# x, a, y = parser.clean_lawschool_gender(3000)
-X_train, X_test, y_train, y_test = train_test_split(x, y,
-                                                    test_size=0.5,
-                                                    random_state=4)
-lner = LogisticRegression(fit_intercept=False, C=100000,
-                          solver='lbfgs', max_iter=1200)
-lner.fit(X_train, y_train)
-pred = lner.predict_proba(X_test)
-pred_train = lner.predict_proba(X_train)
-print('Logistic train', log_loss(y_train, pred_train))
-print('Logistic test', log_loss(y_test, pred))
-
-lner1 = xgb.XGBClassifier(max_depth=3, silent=1,
-                          objective='binary:logistic',
-                          n_estimators=200, gamma=2,
-                          learning_rate=0.1)
-lner1.fit(X_train, y_train)
-pred1_train = lner1.predict_proba(X_train)
-pred1 = lner1.predict_proba(X_test)
-print('XGB train', log_loss(y_train, pred1_train))
-print('XGB test', log_loss(y_test, pred1))
-
-
-lner = Logistic_Base_Learner()
-lner.fit(x, y)
-pred = lner.predict(x)
-print('Logistic', log_loss(y, pred))
-
-# examples for baseline learners
-lner1 = XGB_Base_Classifier()
-lner1.fit(x, y)
-pred1 = lner1.predict(x)
-print('XGB', log_loss(y, pred1))
-
-lner2 = GB_Base_Classifier()
-lner2.fit(x, y)
-pred2 = lner2.predict(x)
-print('GB', log_loss(y, pred2))
-
-lner3 = RF_Base_Classifier()
-lner3.fit(x, y)
-pred3 = lner3.predict(x)
-print('RF', log_loss(y, pred3))
-
-x, a, y = parser.clean_lawschool_race(1000)
-
-lner1 = OLS_Base_Learner()
-lner1.fit(x, y)
-y_pred1 = lner1.predict(x)
-err1 = mean_squared_error(y, y_pred1)
-
-lner2 = XGB_Base_Regressor()
-lner2.fit(x, y)
-y_pred2 = lner2.predict(x)
-err2 = mean_squared_error(y, y_pred2)
-print(err1, err2)
-
-
-# examples for CSC oracle for fair learner
-x, a, y = parser.clean_adult_gender(1000)
-Theta = np.linspace(0, 1.0, 21)
-X, A, Y, W = augment.augment_data_sq(x, a, y, Theta)
-alpha = (Theta[1] - Theta[0])/2
-
-x0, m0 = approximate_data(X, Y, W, Theta)
-x1, m1 = approximate_data_bak(X, Y, W, Theta)
-
-lner = GB_Classifier_Learner(Theta)
-lner.fit(X, Y, W)
-pred = lner.predict(X)
-print(pred)
-
-learner = RFLearner(Theta)
-learner.fit(X, Y, W)
-
-learner1 = RFLearner(Theta)
-learner1.fit(X, Y, W)
-
-# learner1 = SVM_LP_Learner(off_set=alpha, norm_bdd=1)
-# learner1.fit(X, Y, W)
-
-learner2 = LeastSquaresLearner(Theta)
-learner2.fit(X, Y, W)
-
-learner3 = GBLearner(Theta)
-learner3.fit(X, Y, W)
-
-pred = learner.predict(X)
-err = abs(Y - pred).dot(W)
-
-pred1 = learner1.predict(X)
-err1 = abs(Y - pred1).dot(W)
-
-pred2 = learner2.predict(X)
-err2 = abs(Y - pred2).dot(W)
-
-pred3 = learner3.predict(X)
-err3 = abs(Y - pred3).dot(W)
-
-print(err, err1, err2, err3)
-"""
