@@ -1,5 +1,8 @@
-"""This module implements the serveral useful functions for parsing and
-doing some basic data analyses over the data sets.
+"""
+This module implements the functions for parsing three data sets:
+1. Adult
+2. Law school
+3. Communities and Crime
 
 
 Racial encoding for Lawschool Dataset
