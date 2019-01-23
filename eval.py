@@ -81,9 +81,6 @@ def evaluate_FairModel(x, a, y, loss, result, Theta):
     num_t = len(Theta)
     n = int(len(X) / num_t)
 
-    # predictions over all duplicates of data
-    # aggregate_list = [i for h in hs for i in extract_predictions(X, h(X), Theta)]
-
     # predictions
     pred_list = [pd.Series(extract_pred(X, h(X), Theta),
                            index=range(n)) for h in hs]
@@ -116,8 +113,6 @@ def evaluate_FairModel(x, a, y, loss, result, Theta):
         QEO_disp = max([pmf2disp(PMF_quantile[q], PMF_group_quantile[(g, q)]) for (g, q) in pred_group_quantile])
 
     # TODO: make sure at least one for each subgroup
-    # print("DP disp: ", DP_disp)
-    # print("QEO disp: ", QEO_disp)
     evaluation = {}
     evaluation['pred'] = total_pred
     evaluation['classifier_weights'] = result_weights
@@ -381,10 +376,3 @@ def KS_confbdd(n, alpha=0.05):
     ref: http://www.math.utah.edu/~davar/ps-pdf-files/Kolmogorov-Smirnov.pdf
     """
     return np.sqrt((1/(2 * n)) * np.log(2/alpha))
-
-# Example
-# x, a, y = parser.clean_adult_gender(200)
-# Theta = np.linspace(0, 1.0, 11)
-# learner = solvers.LeastSquaresLearner(Theta)
-# model_info = fairlearn.train_FairRegression(x, a, y, 0.05, Theta, learner, constraint="DP", loss="logistic")
-# stuff = evaluate_FairModel(x, a, y, loss, model_info['exp_grad_result'], Theta)
