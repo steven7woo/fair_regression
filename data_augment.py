@@ -130,10 +130,3 @@ def augment_data_logistic(x, a, y, Theta):
     W = abs(W)
     # Compute the weights
     return X_aug, A_aug, Y_aug, W
-
-
-
-# Example:
-# x, a, y = parser.clean_lawschool_race(200)
-# Theta = np.linspace(0, 1.0, 21)
-# X, A, Y, W = augment_data_sq(x, a, y, Theta)
