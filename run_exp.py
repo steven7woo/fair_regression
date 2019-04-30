@@ -26,7 +26,7 @@ TEST_SIZE = 0.5  # fraction of observations from each protected group
 Theta = np.linspace(0, 1.0, 41)
 alpha = (Theta[1] - Theta[0])/2
 DATA_SPLIT_SEED = 4
-_SMALL = True  # small scale dataset for speed and testing
+_SMALL = False  # small scale dataset for speed and testing
 
 def train_test_split_groups(x, a, y, random_seed=DATA_SPLIT_SEED):
     """Split the input dataset into train and test sets
@@ -333,7 +333,6 @@ def read_result_list(result_list):
 
 # Sample instantiation of running the fair regeression algorithm
 eps_list = [0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.15, 0.17, 0.2, 0.23, 0.255, 0.265, 0.27, 0.275, 0.31, 1] # range of specified disparity values
-eps_list = [0.2, 0.4]
 
 n = 100  # size of the sub-sampled dataset, when the flag SMALL is True
 dataset = 'adult'  # name of the data set
@@ -355,10 +354,6 @@ read_result_list([result])  # A simple print out for the experiment
 outfile = open(info+'.pkl','wb')
 pickle.dump(result, outfile)
 outfile.close()
-
-
-
-
 
 # Other sample use:
 """
