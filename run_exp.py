@@ -332,21 +332,33 @@ def read_result_list(result_list):
 
 
 # Sample instantiation of running the fair regeression algorithm
-eps_list = [0.08, 0.1, 0.15, 0.2, 0.25] # range of specified disparity values
-n = 1000  # size of the sub-sampled dataset, when the flag SMALL is True
-dataset = 'law_school'  # name of the data set
+eps_list = [0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.15, 0.17, 0.2, 0.23, 0.255, 0.265, 0.27, 0.275, 0.31, 1] # range of specified disparity values
+eps_list = [0.2, 0.4]
+
+n = 100  # size of the sub-sampled dataset, when the flag SMALL is True
+dataset = 'adult'  # name of the data set
 constraint = "DP"  # name of the constraint; so far limited to demographic parity (or statistical parity)
-loss = "square"  # name of the loss function
-learner = solvers.LeastSquaresLearner(Theta) # Specify a supervised learning oracle oracle 
+loss = "logistic"  # name of the loss function
+learner = solvers.XGB_Regression_Learner(Theta) # Specify a supervised learning oracle oracle 
 
 info = str('Dataset: '+dataset + '; loss: ' + loss + '; eps list: '+str(eps_list)) + '; Solver: '+learner.name
 print('Starting experiment. ' + info)
+
 # Run the fair learning algorithm the supervised learning oracle
 result = fair_train_test(dataset, n, eps_list, learner,
                           constraint=constraint, loss=loss,
                           random_seed=DATA_SPLIT_SEED)
 
-read_result_list([result])  # A simple print out for the experiment result
+read_result_list([result])  # A simple print out for the experiment
+
+# Saving the result list
+outfile = open(info+'.pkl','wb')
+pickle.dump(result, outfile)
+outfile.close()
+
+
+
+
 
 # Other sample use:
 """

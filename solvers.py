@@ -211,7 +211,6 @@ class XGB_Regression_Learner:
         return pred
 
 # HELPER FUNCTIONS HERE FOR BestH Oracles
-
 def SVM_Gurobi(X, Y, W, norm_bdd, off_set):
     """
     Solving SVM using Gurobi solver
