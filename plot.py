@@ -346,6 +346,7 @@ def disp_test_res(result_list, base_list, full=True, paired_test=True):
 
             if paired_test:
                 test_total_pred = test_eval[eps]['pred']
+
                 test_res_weights = test_eval[eps]['classifier_weights']
                 weighted_loss_vec = evaluate.loss_vec(test_total_pred, y_test,
                                                       test_res_weights, loss)
@@ -657,11 +658,6 @@ def remove_interior(p_front, Xs, Ys):
         else:  # remove 2
             return remove_interior([k1, k3]+p_front[3:], Xs, Ys)
 
-
-
-
-
-
 def plot_Ncalls(result_list):
     # initialize
     constraint = "DP"
@@ -865,7 +861,7 @@ def plot_multiples_test():
 
     plt.subplot(2, 3, 6)
     plt.ylim(-0.01, 0.15)
-    disp_test_res([adult_OLS, adult_Logistic, adult_XGB], [adult_bl[1], adult_bl[0]])
+    disp_test_res([adult_OLS, adult_Logistic, adult_XGB, adult_LS_XGB], [adult_bl[1], adult_bl[0]])
     plt.title('adult', fontsize=uni_fontsize)
 
 
@@ -918,7 +914,7 @@ def plot_multiples_train():
 
     plt.subplot(2, 3, 6)
     plt.ylim(0.25, 0.45)
-    disp_train_res([adult_OLS, adult_Logistic, adult_XGB], [adult_bl[1], adult_bl[0]])
+    disp_train_res([adult_OLS, adult_Logistic, adult_XGB, adult_LS_XGB], [adult_bl[1], adult_bl[0]])
     plt.title('adult ', fontsize=uni_fontsize)
 
 
@@ -945,7 +941,7 @@ def plot_multiples_train():
     plt.show()
 
 
-
+# Loading data from the folder below
     
 # Full version
 adult_OLS = pickle.load(open('logged_exp/adult_full_eps_list_[0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.15, 0.17, 0.2, 0.23, 0.255, 0.265, 0.27, 0.275, 0.31, 1]OLS.pkl', 'rb'))
@@ -953,6 +949,8 @@ adult_XGB = pickle.load(open('logged_exp/adult_full_eps_list_[0.01, 0.02, 0.03, 
 adult_Logistic = pickle.load(open('logged_exp/adult_full_eps_list_[0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.15, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 1]_Logistic.pkl', 'rb'))
 adult_bl = pickle.load(open('logged_exp/adult_benchmarks.pkl', 'rb'))
 adult_RF = pickle.load(open('logged_exp/adult_full_RF.pkl', 'rb'))
+adult_LS_XGB = pickle.load(open('logged_exp/adult_LS_tree.pkl', 'rb'))
+
 # disp_curve_list([adult_OLS, adult_XGB, adult_Logistic, adult_RF], adult_bl)
 
 lawschool_XGB =  pickle.load(open('logged_exp/law_school_full_eps_list_[0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.15, 0.2, 0.25, 0.3, 0.34, 0.35, 0.36, 0.37, 0.38, 0.42, 1]_XGB.pkl', 'rb'))
@@ -994,7 +992,6 @@ comm_Ncalls_OLS = pickle.load(open('logged_exp/communities_full_eps_list_[0.01, 
 comm_Ncalls_SVM = pickle.load(open('logged_exp/communities_full_eps_list_[0.01, 0.025, 0.04, 0.06, 0.08, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 1]SVM_NCalls.pkl', 'rb'))
 
 
-load_data()
 plot_multiples_test()
 plot_multiples_train()
 
