@@ -34,11 +34,11 @@ import run_exp
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import log_loss
-# from sklearn.model_selection import train_test_split
+
 print = functools.partial(print, flush=True)
 import xgboost as xgb
 DATA_SPLIT_SEED = 4
-_SMALL = False # small scale dataset for speed and testing
+_SMALL = True # small scale dataset for speed and testing
 
 
 def lambda_response(x, a, y, learner, lamb):
@@ -51,7 +51,6 @@ def lambda_response(x, a, y, learner, lamb):
     p0 = len(a[a==0]) / len(a)
 
     # TODO: Watch out for division by zero
-
     # weighted protected group membership
     vec1 = lamb * a / p1
     vec2 = lamb * (1 - a) / p0
@@ -70,8 +69,8 @@ class LRLearner:
     Basic Logistic regression baed oracle
     Oralce=LR; Class=linear
     """
-    def __init__(self):
-        self.regr = LogisticRegression(random_state=0, C=10,
+    def __init__(self, C=10):
+        self.regr = LogisticRegression(random_state=0, C=C,
                                        max_iter=1200,
                                        fit_intercept=False,
                                        solver='lbfgs')
@@ -107,23 +106,7 @@ class XGBLearner:
 
 
 
-learner = LRLearner()
-
-# print("grid search")
-# for lamb in np.linspace(-0.5, 0.5, 10):
-#     f = lambda_response(x, a, y, learner, lamb)
-#     pred = f(x)
-
-#     pred_prob = pd.DataFrame(pred).iloc[:, 1]
-
-#     evaluation = evaluate.eval_BenchmarkModel(x, a, y, f, 'logistic')
-#     print('loss', evaluation['average_loss'])
-#     print('DP disp', evaluation['DP_disp'])
-
-# vis = [lambda_response(x, a, y, lamb) for lamb in np.linspace(-0.2, 0.2, 200)]
-# A, B = zip(*vis)
-
-def grid_train_test(lambda_list, learner, random_seed=DATA_SPLIT_SEED):
+def grid_train_test(lambda_list, learner):
     """
     Take the adult dataset and get logistic regression learner from
     grid search method.
@@ -137,14 +120,6 @@ def grid_train_test(lambda_list, learner, random_seed=DATA_SPLIT_SEED):
 
     x_train, a_train, y_train, x_test, a_test, y_test = run_exp.train_test_split_groups(x, a, y, random_seed=DATA_SPLIT_SEED)
 
-
-    regr = LogisticRegression(random_state=0, max_iter=1200, C=10,
-                              fit_intercept=False, solver='lbfgs')
-
-    regr.fit(x_train, y_train)
-    pred = regr.predict_proba(x_train)
-    print(log_loss(y_train, pred))
-
     models = {}
     train_evaluation = {}
     test_evaluation = {}
@@ -154,12 +129,10 @@ def grid_train_test(lambda_list, learner, random_seed=DATA_SPLIT_SEED):
         
         train_evaluation[lamb] = evaluate.eval_BenchmarkModel(x_train,
                                                               a_train, y_train, models[lamb], "logistic")
-
         print(lamb, train_evaluation[lamb]['average_loss'])
 
         test_evaluation[lamb] = evaluate.eval_BenchmarkModel(x_test,
                                                              a_test, y_test, models[lamb], "logistic")
-
 
     result = {}
     result['learner'] = learner.name
@@ -169,9 +142,10 @@ def grid_train_test(lambda_list, learner, random_seed=DATA_SPLIT_SEED):
     result['test_eval']  = test_evaluation
     return result
 
-# grid_result = grid_train_test(np.linspace(-0.2, 0.2, 7), learner)
-
+learner = LRLearner(C=10)
+grid_result = grid_train_test(np.linspace(-0.2, 0.2, 3), learner)
 # saving result
-outfile = open('adult_grid.pkl', 'wb')
-pickle.dump(grid_result, outfile)
-outfile.close()
+# outfile = open('adult_short_FC_lin.pkl', 'wb')
+# pickle.dump(grid_result, outfile)
+# outfile.close()
+

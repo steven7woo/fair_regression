@@ -591,6 +591,160 @@ def disp_train_res(result_list, base_list):
                         'black', s=95)
 
 
+
+def disp_grid_search_train(result):
+    """
+    This function is specific to plotting the grid search method.
+    """
+    # initialize
+    constraint = "DP"
+    err_bar = False
+
+    train_eval = result['train_eval']
+    test_eval = result['test_eval']
+    constraint = result['constraint']
+    learner = result['learner']
+    eps_vals = train_eval.keys()
+    train_disp_dic = {}
+    test_disp_dic = {}
+    train_err_dic = {}
+    test_err_dic = {}
+    test_loss_std_dic = {}
+    test_disp_dev_dic = {}
+
+    if learner[:2] == "LR":
+        linestyle='-'
+    else:
+        linestyle = '--'
+
+    for eps in eps_vals:
+        train_disp = train_eval[eps]["DP_disp"]
+        test_disp = test_eval[eps]["DP_disp"]
+        train_disp_dic[eps] = train_disp
+        test_disp_dic[eps] = test_disp
+
+        loss = result['loss']
+            
+        test_loss_std_dic[eps] = test_eval[eps]['loss_std']
+        test_disp_dev_dic[eps] = test_eval[eps]['disp_std']
+
+        train_err_dic[eps] = (train_eval[eps]['average_loss'])
+
+    pareto_epsilons_train = convex_env_train(train_disp_dic,
+                                             train_err_dic)
+
+
+
+
+    # taking the pareto frontier
+    train_disp_list = [train_disp_dic[k] for k in pareto_epsilons_train]
+    train_err_list = [train_err_dic[k] for k in pareto_epsilons_train]
+
+    plt.plot(train_disp_list, train_err_list, color='black', linewidth=2, linestyle=linestyle)
+
+
+
+def disp_grid_search_test(result, base_list, full=True, paired_test=True):
+    """
+    This function is specific to plotting grid search method
+    """
+    # initialize
+    constraint = "DP"
+    err_bar = False
+
+    # First calcuate the baseline loss vector
+    base_res = base_list[0]
+        
+    x, a, y = parser.clean_adult_full()
+    if not full:
+        x, a, y = run_exp.subsample(x, a, y, 2000)
+
+    _, _, _, x_test, a_test, y_test = run_exp.train_test_split_groups(x, a, y, random_seed=DATA_SPLIT_SEED)
+    n = len(y_test)
+    loss = base_res['loss']
+    if paired_test:
+        base_pred = base_res['base_test_eval']['pred']
+        base_loss_vec = evaluate.loss_vec2(base_pred, y_test, loss)
+        base_mean_loss = np.mean(base_loss_vec)
+
+    train_eval = result['train_eval']
+    test_eval = result['test_eval']
+
+    constraint = result['constraint']
+    learner = result['learner']
+    eps_vals = train_eval.keys()
+    train_disp_dic = {}
+    test_disp_dic = {}
+    train_err_dic = {}
+    test_err_dic = {}
+    test_loss_std_dic = {}
+    test_disp_dev_dic = {}
+
+    if learner[:2] == "LR":
+        linestyle='-'
+    else:
+        linestyle = '--'
+
+    for eps in eps_vals:
+        if constraint == "DP":
+            train_disp = train_eval[eps]["DP_disp"]
+            test_disp = test_eval[eps]["DP_disp"]
+        else:
+            raise Exception('Constraint not supported: ', str(constraint))
+        train_disp_dic[eps] = train_disp
+        test_disp_dic[eps] = test_disp
+
+        if paired_test:
+            test_total_pred = test_eval[eps]['pred']
+            loss_vec = evaluate.loss_vec2(test_total_pred, y_test, loss)
+            diff_vec = loss_vec - base_loss_vec
+            loss_mean, loss_std = norm.fit(diff_vec)
+            test_loss_std_dic[eps] = loss_std / np.sqrt(n)
+        else:
+            test_loss_std_dic[eps] = test_eval[eps]['loss_std']
+
+        test_disp_dev_dic[eps] = test_eval[eps]['disp_std']
+
+
+        train_err_dic[eps] = (train_eval[eps]['average_loss'])
+        test_err_dic[eps] = (test_eval[eps]['average_loss'] - base_mean_loss)
+
+    if _PARETO:
+        pareto_epsilons_train = convex_env_train(train_disp_dic,
+                                                 train_err_dic)
+        pareto_epsilons_test = convex_env_test(pareto_epsilons_train,
+                                               test_disp_dic,
+                                               test_err_dic)
+    else:
+        pareto_epsilons_train = eps_vals
+        pareto_epsilons_test = eps_vals
+
+    # taking the pareto frontier
+    train_disp_list = [train_disp_dic[k] for k in pareto_epsilons_train]
+    test_disp_list = [test_disp_dic[k] for k in pareto_epsilons_test]
+    train_err_list = [train_err_dic[k] for k in pareto_epsilons_train]
+    test_err_list = [test_err_dic[k] for k in pareto_epsilons_test]
+
+    err_upperconf = [2 * test_loss_std_dic[k] for k in
+                     pareto_epsilons_test]
+    err_lowerconf = [2 * test_loss_std_dic[k] for k in
+                     pareto_epsilons_test]
+    disp_conf = [test_disp_dev_dic[k] for k in pareto_epsilons_test]
+
+    print(pareto_epsilons_test)
+
+    plt.fill_between(np.array(test_disp_list),
+                         np.array(test_err_list) -
+                         np.array(err_lowerconf),
+                         np.array(test_err_list) +
+                         np.array(err_upperconf), alpha=0.2,
+                         facecolor='black', antialiased=True)
+
+    plt.errorbar(test_disp_list, test_err_list, color='black',
+                     capthick=1, markersize=5, capsize=2,
+                     linewidth=2, linestyle=linestyle)
+
+
 def find_pareto_frontier_dict(Xs, Ys):
     """
     Find the pareto curve using the dict data structures Xs and Ys: are
@@ -856,12 +1010,16 @@ def plot_multiples_test():
     plt.subplot(2, 3, 5)
     plt.ylim(-0.01, 0.11)
     disp_test_res([adult_short_OLS, adult_short_SVM, adult_short_Logistic], [adult_short_bl[0]], full=False)
+
+    disp_grid_search_test(grid_result, [adult_short_bl[0]], full=False, paired_test=True)
     plt.title('adult subsampled', fontsize=uni_fontsize)
     plt.ylabel('relative log loss', fontsize=uni_fontsize)
 
     plt.subplot(2, 3, 6)
     plt.ylim(-0.01, 0.15)
     disp_test_res([adult_OLS, adult_Logistic, adult_XGB, adult_LS_XGB], [adult_bl[1], adult_bl[0]])
+    disp_grid_search_test(adult_FC_lin, [adult_bl[1], adult_bl[0]], full=True, paired_test=True)
+    disp_grid_search_test(adult_FC_tree, [adult_bl[1], adult_bl[0]], full=True, paired_test=True)
     plt.title('adult', fontsize=uni_fontsize)
 
 
@@ -870,6 +1028,10 @@ def plot_multiples_test():
     plt.plot([0.1], [100], color='red', linewidth=2, linestyle='--', markersize=5, label='fair reg. (oracle=LS, class=tree ensemble)')
     plt.plot([0.1], [100], color='blue', linewidth=2, markersize=5, label='fair reg. (oracle=LR, class=linear)')
     plt.plot([0.1], [100], color='blue', linestyle='--', linewidth=2, markersize=5, label='fair reg. (oracle=LR, class=tree ensemble)')
+    plt.plot([0.1], [100], color='black', linestyle='--', linewidth=2, markersize=5, label='FC_tree')
+    plt.plot([0.1], [100], color='black', linestyle='-', linewidth=2, markersize=5, label='FC_lin')
+
+
 
     plt.errorbar([0.1], [100], xerr=[0.0], marker='^', markeredgecolor
                  = 'black', color='black', markerfacecolor='darksalmon',
@@ -909,12 +1071,17 @@ def plot_multiples_train():
     plt.subplot(2, 3, 5)
 
     disp_train_res([adult_short_OLS, adult_short_SVM, adult_short_Logistic], [adult_short_bl[0]])
+
+    disp_grid_search_train(grid_result)
+
     plt.title('adult subsampled', fontsize=uni_fontsize)
     plt.ylabel('log loss', fontsize=uni_fontsize)
 
     plt.subplot(2, 3, 6)
     plt.ylim(0.25, 0.45)
     disp_train_res([adult_OLS, adult_Logistic, adult_XGB, adult_LS_XGB], [adult_bl[1], adult_bl[0]])
+    disp_grid_search_train(adult_FC_lin)
+    disp_grid_search_train(adult_FC_tree)  
     plt.title('adult ', fontsize=uni_fontsize)
 
 
@@ -923,6 +1090,10 @@ def plot_multiples_train():
     plt.plot([0.1], [100], color='red', linewidth=2, linestyle='--', markersize=5, label='fair reg. (oracle=LS, class=tree ensemble)')
     plt.plot([0.1], [100], color='blue', linewidth=2, markersize=5, label='fair reg. (oracle=LR, class=linear)')
     plt.plot([0.1], [100], color='blue', linestyle='--', linewidth=2, markersize=5, label='fair reg. (oracle=LR, class=tree ensemble)')
+
+    plt.plot([0.1], [100], color='black', linestyle='--', linewidth=2, markersize=5, label='FC_tree')
+    plt.plot([0.1], [100], color='black', linestyle='-', linewidth=2, markersize=5, label='FC_lin')
+
 
     plt.errorbar([0.1], [100], xerr=[0.0], marker='^', markeredgecolor
                  = 'black', color='black', markerfacecolor='darksalmon',
@@ -980,7 +1151,7 @@ lawschool_short_bl = pickle.load(open('logged_exp/law_school_short_bl.pkl', 'rb'
 # disp_curve_list([lawschool_short_OLS, lawschool_short_SVM], lawschool_short_bl)
 
 
-    # Data for number of calls
+# Data for number of calls
 adult_Ncalls_Logistic = pickle.load(open('logged_exp/adult_short_eps_list_[0.01, 0.04, 0.08, 0.12, 0.15, 0.2, 0.25, 1]Logistic_N_Calls.pkl', 'rb'))
 adult_Ncalls_OLS = pickle.load(open('logged_exp/adult_short_eps_list_[0.01, 0.04, 0.08, 0.12, 0.15, 0.2, 0.25, 1]OLS_N_Calls.pkl', 'rb'))
 adult_Ncalls_SVM = pickle.load(open('logged_exp/adult_short_eps_list_[0.01, 0.04, 0.08, 0.12, 0.15, 0.2, 0.25, 1]SVM_N_Calls.pkl', 'rb'))
@@ -991,7 +1162,12 @@ lawschool_Ncalls_SVM = pickle.load(open('logged_exp/law_school_short_eps_list_[0
 comm_Ncalls_OLS = pickle.load(open('logged_exp/communities_full_eps_list_[0.01, 0.025, 0.04, 0.06, 0.08, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 1]OLS_NCalls.pkl', 'rb'))
 comm_Ncalls_SVM = pickle.load(open('logged_exp/communities_full_eps_list_[0.01, 0.025, 0.04, 0.06, 0.08, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 1]SVM_NCalls.pkl', 'rb'))
 
+# benchmark with the fair classification algo with logistic regression oracle
+adult_FC_tree = pickle.load(open('adult_grid_tree.pkl', 'rb'))
+adult_FC_lin = pickle.load(open('adult_grid_lin.pkl', 'rb'))
+
 
 plot_multiples_test()
 plot_multiples_train()
+
 
