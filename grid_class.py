@@ -38,7 +38,7 @@ from sklearn.metrics import log_loss
 print = functools.partial(print, flush=True)
 import xgboost as xgb
 DATA_SPLIT_SEED = 4
-_SMALL = True # small scale dataset for speed and testing
+_SMALL = False # small scale dataset for speed and testing
 
 
 def lambda_response(x, a, y, learner, lamb):
@@ -142,9 +142,9 @@ def grid_train_test(lambda_list, learner):
     result['test_eval']  = test_evaluation
     return result
 
-learner = LRLearner(C=10)
-grid_result = grid_train_test(np.linspace(-0.2, 0.2, 3), learner)
-# saving result
+# learner = LRLearner(C=10)
+# grid_result = grid_train_test(np.linspace(-0.5, 0.5, 23), learner)
+# # saving result
 # outfile = open('adult_short_FC_lin.pkl', 'wb')
 # pickle.dump(grid_result, outfile)
 # outfile.close()
