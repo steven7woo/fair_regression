@@ -146,9 +146,9 @@ def grid_train_test(lambda_list, learner):
     result['learners'] = learners
     return result
 
-#learner = LRLearner(C=10)
-#grid_result = grid_train_test(np.linspace(-0.2, 0.2, 3), learner)
-# saving result
+# learner = LRLearner(C=10)
+# grid_result = grid_train_test(np.linspace(-0.5, 0.5, 23), learner)
+# # saving result
 # outfile = open('adult_short_FC_lin.pkl', 'wb')
 # pickle.dump(grid_result, outfile)
 # outfile.close()

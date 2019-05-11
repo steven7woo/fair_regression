@@ -1011,13 +1011,13 @@ def plot_multiples_test():
     plt.ylim(-0.01, 0.11)
     disp_test_res([adult_short_OLS, adult_short_SVM, adult_short_Logistic], [adult_short_bl[0]], full=False)
 
-    disp_grid_search_test(grid_result, [adult_short_bl[0]], full=False, paired_test=True)
+    disp_grid_search_test(adult_short_FC_lin, [adult_short_bl[0]], full=False, paired_test=True)
     plt.title('adult subsampled', fontsize=uni_fontsize)
     plt.ylabel('relative log loss', fontsize=uni_fontsize)
 
     plt.subplot(2, 3, 6)
     plt.ylim(-0.01, 0.15)
-    disp_test_res([adult_OLS, adult_Logistic, adult_XGB, adult_LS_XGB], [adult_bl[1], adult_bl[0]])
+    disp_test_res([adult_OLS, adult_Logistic , adult_XGB, adult_LS_XGB], [adult_bl[1], adult_bl[0]])
     disp_grid_search_test(adult_FC_lin, [adult_bl[1], adult_bl[0]], full=True, paired_test=True)
     disp_grid_search_test(adult_FC_tree, [adult_bl[1], adult_bl[0]], full=True, paired_test=True)
     plt.title('adult', fontsize=uni_fontsize)
@@ -1072,7 +1072,7 @@ def plot_multiples_train():
 
     disp_train_res([adult_short_OLS, adult_short_SVM, adult_short_Logistic], [adult_short_bl[0]])
 
-    disp_grid_search_train(grid_result)
+    disp_grid_search_train(adult_short_FC_lin)
 
     plt.title('adult subsampled', fontsize=uni_fontsize)
     plt.ylabel('log loss', fontsize=uni_fontsize)
@@ -1116,11 +1116,16 @@ def plot_multiples_train():
     
 # Full version
 adult_OLS = pickle.load(open('logged_exp/adult_full_eps_list_[0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.15, 0.17, 0.2, 0.23, 0.255, 0.265, 0.27, 0.275, 0.31, 1]OLS.pkl', 'rb'))
-adult_XGB = pickle.load(open('logged_exp/adult_full_eps_list_[0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.15, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 1]_XGB.pkl', 'rb'))
+adult_XGB = pickle.load(open('adult_full_XGBClassifier_[0.04,0.06,0.08].pkl', 'rb'))
+# adult_XGB = pickle.load(open('logged_exp/adult_full_eps_list_[0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.15, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 1]_XGB.pkl', 'rb'))
 adult_Logistic = pickle.load(open('logged_exp/adult_full_eps_list_[0.01, 0.02, 0.03, 0.04, 0.06, 0.08, 0.1, 0.12, 0.15, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 1]_Logistic.pkl', 'rb'))
 adult_bl = pickle.load(open('logged_exp/adult_benchmarks.pkl', 'rb'))
 adult_RF = pickle.load(open('logged_exp/adult_full_RF.pkl', 'rb'))
 adult_LS_XGB = pickle.load(open('logged_exp/adult_LS_tree.pkl', 'rb'))
+# adult_LR_XGB = pickle.load(open('adult_full_XGBClassifier_[0.04,0.06,0.08].pkl', 'rb'))
+
+
+
 
 # disp_curve_list([adult_OLS, adult_XGB, adult_Logistic, adult_RF], adult_bl)
 
@@ -1165,8 +1170,7 @@ comm_Ncalls_SVM = pickle.load(open('logged_exp/communities_full_eps_list_[0.01, 
 # benchmark with the fair classification algo with logistic regression oracle
 adult_FC_tree = pickle.load(open('adult_grid_tree.pkl', 'rb'))
 adult_FC_lin = pickle.load(open('adult_grid_lin.pkl', 'rb'))
-
-
+adult_short_FC_lin = pickle.load(open('adult_short_FC_lin.pkl', 'rb'))
 plot_multiples_test()
 plot_multiples_train()
 
