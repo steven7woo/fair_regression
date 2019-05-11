@@ -30,6 +30,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 import matplotlib.pyplot as plt
 import itertools
 import run_exp
+import pickle
 
 
 from sklearn.linear_model import LogisticRegression
@@ -38,7 +39,7 @@ from sklearn.metrics import log_loss
 print = functools.partial(print, flush=True)
 import xgboost as xgb
 DATA_SPLIT_SEED = 4
-_SMALL = True # small scale dataset for speed and testing
+_SMALL = False # small scale dataset for speed and testing
 
 
 def lambda_response(x, a, y, learner, lamb):
@@ -60,8 +61,9 @@ def lambda_response(x, a, y, learner, lamb):
     Y = 1 * (cost0 > cost1)
     W = abs(cost0 - cost1)
     learner.fit(x, Y, W)
+    pickled_learner = pickle.dumps(learner)
     f = lambda X : learner.predict(X)
-    return f
+    return f, pickle.loads(pickled_learner)
 
 
 class LRLearner:
@@ -123,9 +125,10 @@ def grid_train_test(lambda_list, learner):
     models = {}
     train_evaluation = {}
     test_evaluation = {}
+    learners = {}
     
     for lamb in lambda_list:
-        models[lamb] = lambda_response(x_train, a_train, y_train, learner, lamb)
+        models[lamb], learners[lamb] = lambda_response(x_train, a_train, y_train, learner, lamb)
         
         train_evaluation[lamb] = evaluate.eval_BenchmarkModel(x_train,
                                                               a_train, y_train, models[lamb], "logistic")
@@ -140,10 +143,11 @@ def grid_train_test(lambda_list, learner):
     result['constraint'] = 'DP'
     result['train_eval'] = train_evaluation
     result['test_eval']  = test_evaluation
+    result['learners'] = learners
     return result
 
-learner = LRLearner(C=10)
-grid_result = grid_train_test(np.linspace(-0.2, 0.2, 3), learner)
+#learner = LRLearner(C=10)
+#grid_result = grid_train_test(np.linspace(-0.2, 0.2, 3), learner)
 # saving result
 # outfile = open('adult_short_FC_lin.pkl', 'wb')
 # pickle.dump(grid_result, outfile)

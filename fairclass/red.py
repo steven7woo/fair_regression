@@ -41,7 +41,7 @@ class _GapResult:
 class _Lagrangian:
     # Operations related to the Lagrangian
     def __init__(self, dataX, dataA, dataY, learner, dataW, cons_class, eps, B,
-                 opt_lambda=True, debug=False):
+                 opt_lambda=True, debug=False, init_cache=[]):
         self.X = dataX
         self.obj = moments.MisclassError(dataX, dataA, dataY, dataW)
         self.cons = cons_class(dataX, dataA, dataY)
@@ -58,6 +58,8 @@ class _Lagrangian:
         self.n_oracle_calls = 0
         self.last_linprog_n_hs = 0
         self.last_linprog_result = None
+        for classifier in init_cache:
+            self.add_classifier(classifier)
         
     def eval_from_error_gamma(self, error, gamma, lambda_vec):
         # Return the value of the Lagrangian.
@@ -156,9 +158,13 @@ class _Lagrangian:
         redW = signed_weights.abs()
         redW = self.n*redW/redW.sum()
 
+        if self.debug:
+            print("%sclassifier start" % ("_"*9,))
         classifier = pickle.loads(self.pickled_learner)
         classifier.fit(self.X, redY, redW)
         self.n_oracle_calls += 1
+        if self.debug:
+            print("%sclassifier end" % ("_"*9,))
         
         h = lambda X: classifier.predict(X)
         h_error = self.obj.gamma(h)[0]
@@ -176,6 +182,7 @@ class _Lagrangian:
         if h_val < best_val-_PRECISION:
             if self.debug:
                 print("%sbest_h: val improvement %f" % ("_"*9, best_val-h_val))
+                print("%snclassifiers: %d" % (" "*9, len(self.hs)))
             h_idx = len(self.hs)
             self.hs.at[h_idx] = h
             self.classifiers.at[h_idx] = classifier
@@ -184,6 +191,16 @@ class _Lagrangian:
             best_idx = h_idx
 
         return self.hs[best_idx], best_idx
+
+    def add_classifier(self, classifier):
+        h = lambda X: classifier.predict(X)
+        h_error = self.obj.gamma(h)[0]
+        h_gamma = self.cons.gamma(h)
+        h_idx = len(self.hs)
+        self.hs.at[h_idx] = h
+        self.classifiers.at[h_idx] = classifier
+        self.errors.at[h_idx] = h_error
+        self.gammas[h_idx] = h_gamma
 
 
 def _mean_pred(dataX, hs, weights):
@@ -216,7 +233,7 @@ _RUN_LP_STEP = True
 
 
 def expgrad(dataX, dataA, dataY, learner, dataW=None, cons_class=moments.DP, eps=0.01,
-            T=50, nu=None, eta_mul=2.0, debug=False):
+            T=50, nu=None, eta_mul=2.0, debug=False, init_cache=[]):
     """
     Return a fair classifier under specified fairness constraints
     via exponentiated-gradient reduction.
@@ -275,7 +292,7 @@ def expgrad(dataX, dataA, dataY, learner, dataW=None, cons_class=moments.DP, eps
 
     B = 1/eps
     lagr = _Lagrangian(dataX, dataA, dataY, learner, dataW, cons_class, eps, B,
-                       debug=debug)
+                       debug=debug, init_cache=init_cache)
 
     theta  = pd.Series(0, lagr.cons.index)
     Qsum = pd.Series()
@@ -309,7 +326,7 @@ def expgrad(dataX, dataA, dataY, learner, dataW=None, cons_class=moments.DP, eps
             if debug:
                 print("...eps=%.3f, B=%.1f, nu=%.6f, T=%d, eta_min=%.6f"
                       % (eps, B, nu, T, eta_min))
-                print(lagr.cons.index)
+                #print(lagr.cons.index)
 
         if not Qsum.index.contains(h_idx):
             Qsum.at[h_idx] = 0.0

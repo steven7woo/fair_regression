@@ -147,12 +147,15 @@ class XGB_Classifier_Learner:
     Basic GB classifier based oracle
     Oracle=LR; Class=Tree ensemble
     """
-    def __init__(self, Theta):
+    def __init__(self, Theta, clf=None):
         self.Theta = Theta
         self.name = "XGB Classifier"
         param = {'max_depth' : 3, 'silent' : 1, 'objective' :
                  'binary:logistic', 'n_estimators' : 150, 'gamma' : 2}
-        self.clf = xgb.XGBClassifier(**param)
+        if clf is None:
+            self.clf = xgb.XGBClassifier(**param)
+        else:
+            self.clf = clf
 
     def fit(self, X, Y, W):
         matX, vecY, vecW = approx_data_logistic(X, Y, W, self.Theta)

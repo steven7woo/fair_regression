@@ -39,7 +39,7 @@ _LOGISTIC_C = 5  # Constant for rescaled logisitic loss
 
 
 def train_FairRegression(x, a, y, eps, Theta, learner,
-                                constraint="DP", loss="square"):
+                                constraint="DP", loss="square", init_cache=[]):
     """
     First run the fair algorithm on the training set and then record
     the metrics on thre training set.
@@ -62,10 +62,10 @@ def train_FairRegression(x, a, y, eps, Theta, learner,
     if constraint == "DP":  # DP constraint
         result = red.expgrad(X, A, Y, learner, dataW=W,
                              cons_class=moments.DP_theta, eps=eps,
-                             debug=False)
+                             debug=False, init_cache=init_cache)
     elif constraint == "QEO":  # QEO constraint
         result = red.expgrad(X, A, Y, learner, dataW=W,
-                             cons_class=moments.QEO, eps=eps, debug=True)
+                             cons_class=moments.QEO, eps=eps, debug=True, init_cache=init_cache)
     else:  # exception
         raise Exception('Constraint not supported: ', str(constraint))
 

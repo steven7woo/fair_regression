@@ -79,7 +79,7 @@ def subsample(x, a, y, size, random_seed=DATA_SPLIT_SEED):
 
 
 def fair_train_test(dataset, size, eps_list, learner, constraint="DP",
-                   loss="square", random_seed=DATA_SPLIT_SEED):
+                   loss="square", random_seed=DATA_SPLIT_SEED, init_cache=[]):
     """
     Input:
     - dataset name
@@ -119,7 +119,8 @@ def fair_train_test(dataset, size, eps_list, learner, constraint="DP",
                                                          Theta,
                                                          learner,
                                                          constraint,
-                                                         loss)
+                                                         loss,
+                                                         init_cache=init_cache)
 
         train_evaluation[eps] = evaluate.evaluate_FairModel(x_train,
                                                             a_train,
