@@ -20,7 +20,7 @@ print('Learner:',  adult_FC_tree['learner'])
 for lamb in adult_FC_tree['train_eval'].keys():
     print('Train eval for lambda = %3f: avg loss = %3f, DP_disp = %3f'% (lamb, adult_FC_tree['train_eval'][lamb]['average_loss'], adult_FC_tree['train_eval'][lamb]['DP_disp']))
 
-generate_cache = False
+generate_cache = True
 
 print('Cache')
 if generate_cache:
