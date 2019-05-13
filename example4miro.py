@@ -20,11 +20,13 @@ print('Learner:',  adult_FC_tree['learner'])
 for lamb in adult_FC_tree['train_eval'].keys():
     print('Train eval for lambda = %3f: avg loss = %3f, DP_disp = %3f'% (lamb, adult_FC_tree['train_eval'][lamb]['average_loss'], adult_FC_tree['train_eval'][lamb]['DP_disp']))
 
-generate_cache = True
+generate_cache = False
+run_experiment = False
 
 print('Cache')
 if generate_cache:
-    grid_result = grid.grid_train_test([-0.24, -0.20, -0.16, 0, 0.16, 0.20, 0.24], grid.XGBLearner())
+    #grid_result = grid.grid_train_test([-0.24, -0.20, -0.16, 0, 0.16, 0.20, 0.24], grid.XGBLearner())
+    grid_result = grid.grid_train_test([-0.24, 0.24], grid.XGBLearner())
     for lamb in grid_result['train_eval'].keys():
         print('Train Evaluation for lambda = %3f: average loss = %3f, DP_disp = %3f'% (lamb, grid_result['train_eval'][lamb]['average_loss'], grid_result['train_eval'][lamb]['DP_disp']))
     outfile = open('grid_result.pkl', 'wb')
@@ -52,14 +54,21 @@ learner = solvers.XGB_Classifier_Learner(Theta) # Specify a supervised learning 
 info = str('Dataset: '+dataset + '; loss: ' + loss + '; eps list: '+str(eps_list)) + '; Solver: '+learner.name
 print('Starting experiment. ' + info)
 
-# Run the fair learning algorithm the supervised learning oracle
-result = run_exp.fair_train_test(dataset, n, eps_list, learner,
-                          constraint=constraint, loss=loss,
-                          random_seed=DATA_SPLIT_SEED, init_cache=cache)
+resultname = dataset+'-results-with-cache.pkl'
 
+# Run the fair learning algorithm the supervised learning oracle
+if run_experiment:
+    result = run_exp.fair_train_test(dataset, n, eps_list, learner,
+                              constraint=constraint, loss=loss,
+                              random_seed=DATA_SPLIT_SEED, init_cache=cache)
+    outfile = open(resultname,'wb')
+    pickle.dump(result, outfile)
+    outfile.close()
+else:
+    infile = open(resultname,'rb')
+    result = pickle.load(infile)
+    infile.close()
+    
 run_exp.read_result_list([result])  # A simple print out for the experiment
 
 # Saving the result list
-outfile = open(info+'.pkl','wb')
-pickle.dump(result, outfile)
-outfile.close()

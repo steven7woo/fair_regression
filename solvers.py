@@ -27,7 +27,7 @@ import random
 import data_parser as parser
 import data_augment as augment
 from itertools import repeat
-from gurobipy import *
+#from gurobipy import *
 
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error, mean_absolute_error, log_loss
